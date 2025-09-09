@@ -338,7 +338,7 @@ async function isSupabaseConnectedWithRetry(retries = 3): Promise<boolean> {
 export const projectsApi = {
   async getAll(): Promise<Project[]> {
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseServerClient) {
         const { data, error } = await supabaseServerClient
           .from('projects')
           .select('*')
@@ -357,7 +357,7 @@ export const projectsApi = {
 
   async getById(id: string): Promise<Project | null> {
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseServerClient) {
         const { data, error } = await supabaseServerClient
           .from('projects')
           .select('*')
@@ -377,7 +377,7 @@ export const projectsApi = {
 
   async getFeatured(): Promise<Project[]> {
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseServerClient) {
         const { data, error } = await supabaseServerClient
           .from('projects')
           .select('*')
@@ -409,7 +409,7 @@ export const projectsApi = {
     };
 
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseAdmin) {
         const { data, error } = await supabaseAdmin
           .from('projects')
           .insert([newProject])
@@ -437,7 +437,7 @@ export const projectsApi = {
     };
 
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseAdmin) {
         const { data, error } = await supabaseAdmin
           .from('projects')
           .update(updateData)
@@ -469,7 +469,7 @@ export const projectsApi = {
 
   async delete(id: string): Promise<void> {
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseAdmin) {
         const { error } = await supabaseAdmin
           .from('projects')
           .delete()
@@ -496,7 +496,7 @@ export const projectsApi = {
 export const teamMembersApi = {
   async getAll(): Promise<TeamMember[]> {
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseServerClient) {
         const { data, error } = await supabaseServerClient
           .from('team_members')
           .select('*')
@@ -528,7 +528,7 @@ export const teamMembersApi = {
     };
 
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseAdmin) {
         const { data, error } = await supabaseAdmin
           .from('team_members')
           .insert([newMember])
@@ -556,7 +556,7 @@ export const teamMembersApi = {
     };
 
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseAdmin) {
         const { data, error } = await supabaseAdmin
           .from('team_members')
           .update(updateData)
@@ -588,7 +588,7 @@ export const teamMembersApi = {
 
   async delete(id: string): Promise<void> {
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseAdmin) {
         const { error } = await supabaseAdmin
           .from('team_members')
           .delete()
@@ -615,7 +615,7 @@ export const teamMembersApi = {
 export const testimonialsApi = {
   async getAll(): Promise<Testimonial[]> {
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseServerClient) {
         const { data, error } = await supabaseServerClient
           .from('testimonials')
           .select('*')
@@ -647,7 +647,7 @@ export const testimonialsApi = {
     };
 
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseAdmin) {
         const { data, error } = await supabaseAdmin
           .from('testimonials')
           .insert([newTestimonial])
@@ -675,7 +675,7 @@ export const testimonialsApi = {
     };
 
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseAdmin) {
         const { data, error } = await supabaseAdmin
           .from('testimonials')
           .update(updateData)
@@ -707,7 +707,7 @@ export const testimonialsApi = {
 
   async delete(id: string): Promise<void> {
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseAdmin) {
         const { error } = await supabaseAdmin
           .from('testimonials')
           .delete()
@@ -734,7 +734,7 @@ export const testimonialsApi = {
 export const siteSettingsApi = {
   async get(key: keyof SiteSettings): Promise<any> {
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseServerClient) {
         const { data, error } = await supabaseServerClient
           .from('site_settings')
           .select('value')
@@ -754,7 +754,7 @@ export const siteSettingsApi = {
 
   async set(key: keyof SiteSettings, value: any): Promise<void> {
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseAdmin) {
         const { error } = await supabaseAdmin
           .from('site_settings')
           .upsert({
@@ -781,7 +781,7 @@ export const siteSettingsApi = {
 export const adminUsersApi = {
   async getAll(): Promise<AdminUser[]> {
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseAdmin) {
         const { data, error } = await supabaseAdmin
           .from('admin_users')
           .select('*')
@@ -801,7 +801,7 @@ export const adminUsersApi = {
 
   async authenticate(username: string, password: string): Promise<AdminUser | null> {
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseAdmin) {
         const { data, error } = await supabaseAdmin
           .from('admin_users')
           .select('*')
@@ -811,10 +811,12 @@ export const adminUsersApi = {
         
         if (!error && data && data.password_hash === password) {
           // Update last login
-          await supabaseAdmin
+          if (supabaseAdmin) {
+            await supabaseAdmin
             .from('admin_users')
             .update({ last_login: new Date().toISOString() })
             .eq('id', data.id);
+          }
           
           return data;
         }
@@ -845,7 +847,7 @@ export const adminUsersApi = {
     };
 
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseAdmin) {
         const { data, error } = await supabaseAdmin
           .from('admin_users')
           .insert([newUser])
@@ -873,7 +875,7 @@ export const adminUsersApi = {
     };
 
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseAdmin) {
         const { data, error } = await supabaseAdmin
           .from('admin_users')
           .update(updateData)
@@ -905,7 +907,7 @@ export const adminUsersApi = {
 
   async delete(id: string): Promise<void> {
     try {
-      if (await isSupabaseConnectedWithRetry()) {
+      if (await isSupabaseConnectedWithRetry() && supabaseAdmin) {
         const { error } = await supabaseAdmin
           .from('admin_users')
           .delete()
