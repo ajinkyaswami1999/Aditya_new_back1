@@ -15,7 +15,7 @@ export interface Project {
   duration: string;
   featured: boolean;
   main_image: string;
-  additional_images?: string[];
+  additional_images: string[];
   created_at: string;
   updated_at: string;
 }
@@ -345,7 +345,10 @@ export const projectsApi = {
           .order('created_at', { ascending: false });
         
         if (!error && data) {
-          return data;
+          return data.map(project => ({
+            ...project,
+            additional_images: project.additional_images || []
+          }));
         }
       }
     } catch (error) {
@@ -365,7 +368,10 @@ export const projectsApi = {
           .single();
         
         if (!error && data) {
-          return data;
+          return {
+            ...data,
+            additional_images: data.additional_images || []
+          };
         }
       }
     } catch (error) {
@@ -385,7 +391,10 @@ export const projectsApi = {
           .order('created_at', { ascending: false });
         
         if (!error && data) {
-          return data;
+          return data.map(project => ({
+            ...project,
+            additional_images: project.additional_images || []
+          }));
         }
       }
     } catch (error) {
@@ -401,7 +410,7 @@ export const projectsApi = {
       throw new Error('Missing required fields: title, category, location');
     }
 
-    const newProject = {
+    const newProject: Project = {
       ...project,
       additional_images: project.additional_images || [],
       id: generateId(),
@@ -418,7 +427,10 @@ export const projectsApi = {
           .single();
         
         if (!error && data) {
-          return data;
+          return {
+            ...data,
+            additional_images: data.additional_images || []
+          };
         }
         console.log('Supabase insert failed, using fallback:', error);
       }
@@ -447,7 +459,10 @@ export const projectsApi = {
           .single();
         
         if (!error && data) {
-          return data;
+          return {
+            ...data,
+            additional_images: data.additional_images || []
+          };
         }
         console.log('Supabase update failed, using fallback:', error);
       }
@@ -460,7 +475,8 @@ export const projectsApi = {
     if (projectIndex !== -1) {
       fallbackData.projects[projectIndex] = {
         ...fallbackData.projects[projectIndex],
-        ...updateData
+        ...updateData,
+        additional_images: updateData.additional_images || fallbackData.projects[projectIndex].additional_images
       };
       return fallbackData.projects[projectIndex];
     }
@@ -521,7 +537,7 @@ export const teamMembersApi = {
       throw new Error('Missing required fields: name, position');
     }
 
-    const newMember = {
+    const newMember: TeamMember = {
       ...member,
       id: generateId(),
       created_at: new Date().toISOString(),
@@ -640,7 +656,7 @@ export const testimonialsApi = {
       throw new Error('Missing required fields: client_name, testimonial_text');
     }
 
-    const newTestimonial = {
+    const newTestimonial: Testimonial = {
       ...testimonial,
       id: generateId(),
       created_at: new Date().toISOString(),
@@ -840,7 +856,7 @@ export const adminUsersApi = {
       throw new Error('Missing required fields: username, password_hash');
     }
 
-    const newUser = {
+    const newUser: AdminUser = {
       ...user,
       id: generateId(),
       created_at: new Date().toISOString(),
