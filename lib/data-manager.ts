@@ -885,7 +885,7 @@ export const adminUsersApi = {
     }
     
     // Fallback: Add to demo data
-    fallbackData.admin_users.push(newUser);
+    fallbackData.admin_users.push(newUser as any);
     return newUser;
   },
 
@@ -919,7 +919,7 @@ export const adminUsersApi = {
       fallbackData.admin_users[userIndex] = {
         ...fallbackData.admin_users[userIndex],
         ...updateData
-      };
+      } as any;
       return fallbackData.admin_users[userIndex];
     }
     
