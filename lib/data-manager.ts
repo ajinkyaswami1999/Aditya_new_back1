@@ -307,21 +307,11 @@ function generateId(): string {
 }
 
 // Enhanced connection check with retry
-async function isSupabaseConnectedWithRetry(retries = 3): Promise<boolean> {
-  // Add production debugging
-  if (process.env.NODE_ENV === 'production') {
-    console.log('Production Supabase check:', {
-      hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-      hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-      urlPrefix: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 20)
-    });
-  }
-
+async function isSupabaseConnectedWithRetry(retries = 1): Promise<boolean> {
   for (let i = 0; i <= retries; i++) {
     try {
       if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || !supabaseServerClient) {
-        console.log('Supabase not configured, using fallback data');
+        console.log(`[Attempt ${i + 1}] Supabase not configured`);
         return false;
       }
       
@@ -331,22 +321,22 @@ async function isSupabaseConnectedWithRetry(retries = 3): Promise<boolean> {
         .limit(1);
       
       if (!error) {
-        console.log('Supabase connection successful');
+        console.log(`[Attempt ${i + 1}] Supabase connection successful - using database data`);
         return true;
       }
       
-      console.log(`Supabase connection attempt ${i + 1} failed:`, error);
+      console.log(`[Attempt ${i + 1}] Supabase connection failed:`, error.message);
       if (i < retries) {
         await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
       }
     } catch (error) {
-      console.log(`Supabase connection error attempt ${i + 1}:`, error);
+      console.log(`[Attempt ${i + 1}] Supabase connection error:`, error instanceof Error ? error.message : 'Unknown error');
       if (i < retries) {
         await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
       }
     }
   }
-  console.log('All Supabase connection attempts failed, using fallback data');
+  console.log(`[Final] All ${retries + 1} Supabase connection attempts failed`);
   return false;
 }
 
@@ -355,28 +345,35 @@ export const projectsApi = {
   async getAll(): Promise<Project[]> {
     try {
       if (await isSupabaseConnectedWithRetry() && supabaseServerClient) {
+        console.log('Loading projects from Supabase database...');
         const { data, error } = await supabaseServerClient
           .from('projects')
           .select('*')
           .order('created_at', { ascending: false });
         
         if (!error && data) {
+          console.log(`Loaded ${data.length} projects from database`);
           return data.map(project => ({
             ...project,
             additional_images: project.additional_images || []
           }));
+        } else {
+          console.error('Error loading projects from database:', error);
+          throw new Error('Failed to load from database');
         }
       }
     } catch (error) {
-      console.log('Using fallback projects data:', error);
+      console.log('Supabase not available, using fallback projects data:', error);
     }
     
+    console.log('Using fallback projects data');
     return fallbackData.projects;
   },
 
   async getById(id: string): Promise<Project | null> {
     try {
       if (await isSupabaseConnectedWithRetry() && supabaseServerClient) {
+        console.log(`Loading project ${id} from Supabase database...`);
         const { data, error } = await supabaseServerClient
           .from('projects')
           .select('*')
@@ -384,22 +381,28 @@ export const projectsApi = {
           .single();
         
         if (!error && data) {
+          console.log(`Loaded project ${id} from database`);
           return {
             ...data,
             additional_images: data.additional_images || []
           };
+        } else {
+          console.error(`Error loading project ${id} from database:`, error);
+          throw new Error('Failed to load from database');
         }
       }
     } catch (error) {
-      console.log('Using fallback project data:', error);
+      console.log(`Supabase not available for project ${id}, using fallback data:`, error);
     }
     
+    console.log(`Using fallback data for project ${id}`);
     return fallbackData.projects.find(project => project.id === id) || null;
   },
 
   async getFeatured(): Promise<Project[]> {
     try {
       if (await isSupabaseConnectedWithRetry() && supabaseServerClient) {
+        console.log('Loading featured projects from Supabase database...');
         const { data, error } = await supabaseServerClient
           .from('projects')
           .select('*')
@@ -407,16 +410,21 @@ export const projectsApi = {
           .order('created_at', { ascending: false });
         
         if (!error && data) {
+          console.log(`Loaded ${data.length} featured projects from database`);
           return data.map(project => ({
             ...project,
             additional_images: project.additional_images || []
           }));
+        } else {
+          console.error('Error loading featured projects from database:', error);
+          throw new Error('Failed to load from database');
         }
       }
     } catch (error) {
-      console.log('Using fallback featured projects data:', error);
+      console.log('Supabase not available, using fallback featured projects data:', error);
     }
     
+    console.log('Using fallback featured projects data');
     return fallbackData.projects.filter(project => project.featured);
   },
 
@@ -530,6 +538,7 @@ export const teamMembersApi = {
   async getAll(): Promise<TeamMember[]> {
     try {
       if (await isSupabaseConnectedWithRetry() && supabaseServerClient) {
+        console.log('Loading team members from Supabase database...');
         const { data, error } = await supabaseServerClient
           .from('team_members')
           .select('*')
@@ -537,13 +546,18 @@ export const teamMembersApi = {
           .order('sort_order', { ascending: true });
         
         if (!error && data) {
+          console.log(`Loaded ${data.length} team members from database`);
           return data;
+        } else {
+          console.error('Error loading team members from database:', error);
+          throw new Error('Failed to load from database');
         }
       }
     } catch (error) {
-      console.log('Using fallback team members data:', error);
+      console.log('Supabase not available, using fallback team members data:', error);
     }
     
+    console.log('Using fallback team members data');
     return fallbackData.team_members.filter(member => member.active);
   },
 
@@ -652,6 +666,7 @@ export const testimonialsApi = {
   async getAll(): Promise<Testimonial[]> {
     try {
       if (await isSupabaseConnectedWithRetry() && supabaseServerClient) {
+        console.log('Loading testimonials from Supabase database...');
         const { data, error } = await supabaseServerClient
           .from('testimonials')
           .select('*')
@@ -659,13 +674,18 @@ export const testimonialsApi = {
           .order('created_at', { ascending: false });
         
         if (!error && data) {
+          console.log(`Loaded ${data.length} testimonials from database`);
           return data;
+        } else {
+          console.error('Error loading testimonials from database:', error);
+          throw new Error('Failed to load from database');
         }
       }
     } catch (error) {
-      console.log('Using fallback testimonials data:', error);
+      console.log('Supabase not available, using fallback testimonials data:', error);
     }
     
+    console.log('Using fallback testimonials data');
     return fallbackData.testimonials.filter(testimonial => testimonial.active);
   },
 
@@ -772,6 +792,7 @@ export const siteSettingsApi = {
   async get(key: keyof SiteSettings): Promise<any> {
     try {
       if (await isSupabaseConnectedWithRetry() && supabaseServerClient) {
+        console.log(`Loading ${key} from Supabase database...`);
         const { data, error } = await supabaseServerClient
           .from('site_settings')
           .select('value')
@@ -779,13 +800,18 @@ export const siteSettingsApi = {
           .single();
         
         if (!error && data?.value) {
+          console.log(`Loaded ${key} from database`);
           return JSON.parse(data.value);
+        } else {
+          console.error(`Error loading ${key} from database:`, error);
+          throw new Error('Failed to load from database');
         }
       }
     } catch (error) {
-      console.log(`Using fallback ${key} data:`, error);
+      console.log(`Supabase not available for ${key}, using fallback data:`, error);
     }
     
+    console.log(`Using fallback ${key} data`);
     return (fallbackData.site_settings as any)[key];
   },
 
@@ -819,6 +845,7 @@ export const adminUsersApi = {
   async getAll(): Promise<AdminUser[]> {
     try {
       if (await isSupabaseConnectedWithRetry() && supabaseAdmin) {
+        console.log('Loading admin users from Supabase database...');
         const { data, error } = await supabaseAdmin
           .from('admin_users')
           .select('*')
@@ -826,19 +853,25 @@ export const adminUsersApi = {
           .order('created_at', { ascending: false });
         
         if (!error && data) {
+          console.log(`Loaded ${data.length} admin users from database`);
           return data;
+        } else {
+          console.error('Error loading admin users from database:', error);
+          throw new Error('Failed to load from database');
         }
       }
     } catch (error) {
-      console.log('Using fallback admin users data:', error);
+      console.log('Supabase not available, using fallback admin users data:', error);
     }
     
+    console.log('Using fallback admin users data');
     return fallbackData.admin_users.filter(user => user.active);
   },
 
   async authenticate(username: string, password: string): Promise<AdminUser | null> {
     try {
       if (await isSupabaseConnectedWithRetry() && supabaseAdmin) {
+        console.log(`Authenticating user ${username} via Supabase database...`);
         const { data, error } = await supabaseAdmin
           .from('admin_users')
           .select('*')
@@ -847,6 +880,7 @@ export const adminUsersApi = {
           .single();
         
         if (!error && data && data.password_hash === password) {
+          console.log(`User ${username} authenticated successfully via database`);
           // Update last login
           if (supabaseAdmin) {
             await supabaseAdmin
@@ -856,17 +890,23 @@ export const adminUsersApi = {
           }
           
           return data;
+        } else {
+          console.log(`Authentication failed for ${username} via database`);
+          return null;
         }
       }
     } catch (error) {
-      console.log('Using fallback authentication:', error);
+      console.log(`Supabase not available for authentication, using fallback for ${username}:`, error);
     }
     
     // Fallback authentication
+    console.log(`Using fallback authentication for ${username}`);
     const user = fallbackData.admin_users.find(u => u.username === username && u.active);
     if (user && user.password_hash === password) {
+      console.log(`User ${username} authenticated successfully via fallback`);
       return user;
     }
+    console.log(`Authentication failed for ${username} via fallback`);
     return null;
   },
 
