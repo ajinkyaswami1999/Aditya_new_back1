@@ -40,7 +40,7 @@ export interface Testimonial {
   client_position: string;
   testimonial_text: string;
   rating: number;
-  project_id?: string;
+  project_id: string;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -661,6 +661,7 @@ export const testimonialsApi = {
 
     const newTestimonial: Testimonial = {
       ...testimonial,
+      project_id: testimonial.project_id || '',
       id: generateId(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
