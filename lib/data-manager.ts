@@ -24,10 +24,10 @@ export interface TeamMember {
   id: string;
   name: string;
   position: string;
-  bio?: string;
+  bio: string;
   image_url: string;
-  email?: string;
-  linkedin_url?: string;
+  email: string;
+  linkedin_url: string;
   sort_order: number;
   active: boolean;
   created_at: string;
@@ -538,6 +538,9 @@ export const teamMembersApi = {
     }
 
     const newMember: TeamMember = {
+      bio: member.bio || '',
+      email: member.email || '',
+      linkedin_url: member.linkedin_url || '',
       ...member,
       id: generateId(),
       created_at: new Date().toISOString(),
