@@ -308,9 +308,20 @@ function generateId(): string {
 
 // Enhanced connection check with retry
 async function isSupabaseConnectedWithRetry(retries = 3): Promise<boolean> {
+  // Add production debugging
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Production Supabase check:', {
+      hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      urlPrefix: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 20)
+    });
+  }
+
   for (let i = 0; i <= retries; i++) {
     try {
       if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || !supabaseServerClient) {
+        console.log('Supabase not configured, using fallback data');
         return false;
       }
       
@@ -319,18 +330,23 @@ async function isSupabaseConnectedWithRetry(retries = 3): Promise<boolean> {
         .select('count')
         .limit(1);
       
-      if (!error) return true;
+      if (!error) {
+        console.log('Supabase connection successful');
+        return true;
+      }
       
+      console.log(`Supabase connection attempt ${i + 1} failed:`, error);
       if (i < retries) {
         await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
       }
     } catch (error) {
-      console.log(`Supabase connection attempt ${i + 1} failed:`, error);
+      console.log(`Supabase connection error attempt ${i + 1}:`, error);
       if (i < retries) {
         await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
       }
     }
   }
+  console.log('All Supabase connection attempts failed, using fallback data');
   return false;
 }
 
