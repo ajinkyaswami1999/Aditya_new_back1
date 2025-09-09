@@ -1,0 +1,137 @@
+'use client';
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Star } from 'lucide-react';
+import { supabaseClient } from '@/lib/supabase-client';
+
+interface Testimonial {
+  id: string;
+  client_name: string;
+  client_position: string;
+  testimonial_text: string;
+  rating: number;
+  active: boolean;
+}
+export default function TestimonialsSection() {
+  const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadTestimonials();
+  }, []);
+
+  const loadTestimonials = async () => {
+    try {
+      // Try to load from Supabase first
+      if (supabaseClient) {
+        const { data, error } = await supabaseClient
+          .from('testimonials')
+          .select('*')
+          .eq('active', true)
+          .order('created_at', { ascending: false });
+        
+        if (!error && data) {
+          setTestimonials(data);
+          return;
+        }
+      }
+      
+      // Fallback to API route
+      const response = await fetch('/api/testimonials');
+      if (response.ok) {
+        const testimonialsData = await response.json();
+        setTestimonials(testimonialsData);
+      }
+    } catch (error) {
+      console.error('Error loading testimonials:', error);
+      // Keep empty testimonials array on error
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    if (testimonials.length === 0) return;
+
+    const timer = setInterval(() => {
+      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+    }, 4000);
+
+    return () => clearInterval(timer);
+  }, [testimonials.length]);
+
+  if (loading) {
+    return (
+      <section className="py-20 bg-gradient-to-b from-gray-900 to-black text-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="text-yellow-400 text-xl">Loading testimonials...</div>
+        </div>
+      </section>
+    );
+  }
+
+  if (testimonials.length === 0) {
+    return (
+      <section className="py-20 bg-gradient-to-b from-gray-900 to-black text-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl md:text-5xl font-light mb-8 tracking-wide text-yellow-400">
+            Client Reviews
+          </h2>
+          <div className="text-gray-400">No testimonials available</div>
+        </div>
+      </section>
+    );
+  }
+  return (
+    <section className="py-20 bg-gradient-to-b from-gray-900 to-black text-white">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 className="text-4xl md:text-5xl font-light mb-16 tracking-wide text-yellow-400">
+          Client Reviews
+        </h2>
+
+        <div className="relative h-64 overflow-hidden">
+          {testimonials.map((testimonial, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-500 ${
+                index === currentTestimonial ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <div className="flex justify-center mb-4">
+                {[...Array(testimonial.rating)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className="w-5 h-5 fill-current text-yellow-400"
+                  />
+                ))}
+              </div>
+              <p className="text-xl md:text-2xl font-light mb-8 leading-relaxed">
+                "{testimonial.testimonial_text}"
+              </p>
+              <div>
+                <h4 className="font-medium text-lg">
+                  {testimonial.client_name}
+                </h4>
+                <p className="text-gray-400">{testimonial.client_position}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex justify-center space-x-2 mt-8">
+          {testimonials.map((_, index) => (
+            <button
+              key={index}
+              className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                index === currentTestimonial ? 'bg-white' : 'bg-gray-600'
+              }`}
+              onClick={() => setCurrentTestimonial(index)}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}

@@ -1,0 +1,929 @@
+import { supabaseClient } from './supabase-client';
+import { supabaseAdmin, supabaseServerClient, testSupabaseConnection } from './supabase-server';
+
+// Database types
+export interface Project {
+  id: string;
+  title: string;
+  category: string;
+  location: string;
+  year: string;
+  description: string;
+  details: string;
+  client: string;
+  area: string;
+  duration: string;
+  featured: boolean;
+  main_image: string;
+  additional_images?: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  position: string;
+  bio?: string;
+  image_url: string;
+  email?: string;
+  linkedin_url?: string;
+  sort_order: number;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Testimonial {
+  id: string;
+  client_name: string;
+  client_position: string;
+  testimonial_text: string;
+  rating: number;
+  project_id?: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminUser {
+  id: string;
+  username: string;
+  password_hash: string;
+  role: 'admin' | 'super_admin';
+  permissions: Record<string, boolean>;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+  last_login?: string;
+}
+
+export interface SiteSettings {
+  stats: {
+    projectsCompleted: number;
+    yearsExperience: number;
+    happyClients: number;
+    successRate: number;
+  };
+  contact_info: {
+    address: string;
+    phone: string;
+    email: string;
+  };
+  social_links: {
+    facebook: string;
+    instagram: string;
+    twitter: string;
+    youtube: string;
+    linkedin: string;
+    behance: string;
+  };
+  hero_slides: Array<{
+    image: string;
+    title: string;
+    subtitle: string;
+  }>;
+}
+
+// Fallback data for when Supabase is not connected
+const fallbackData = {
+  projects: [
+    {
+      id: "1",
+      title: "Modern Villa Residence",
+      category: "Residential",
+      location: "California",
+      year: "2024",
+      description: "A stunning contemporary villa featuring clean lines and sustainable materials.",
+      details: "This modern villa represents the pinnacle of contemporary residential design. Featuring floor-to-ceiling windows, an open-plan layout, and sustainable materials throughout, this home seamlessly blends indoor and outdoor living.",
+      client: "Johnson Family",
+      area: "4,500 sq ft",
+      duration: "18 months",
+      featured: true,
+      main_image: "https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg",
+      additional_images: [
+        "https://images.pexels.com/photos/2219024/pexels-photo-2219024.jpeg",
+        "https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg"
+      ],
+      created_at: "2024-01-15T10:00:00Z",
+      updated_at: "2024-01-15T10:00:00Z"
+    },
+    {
+      id: "2",
+      title: "Corporate Headquarters",
+      category: "Commercial",
+      location: "New York",
+      year: "2023",
+      description: "State-of-the-art office building designed for maximum productivity and wellness.",
+      details: "A revolutionary approach to corporate architecture that prioritizes employee wellbeing and environmental sustainability. The building features advanced HVAC systems, natural lighting optimization, and flexible workspace configurations.",
+      client: "Tech Innovations Corp",
+      area: "25,000 sq ft",
+      duration: "24 months",
+      featured: true,
+      main_image: "https://images.pexels.com/photos/2219024/pexels-photo-2219024.jpeg",
+      additional_images: [
+        "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg",
+        "https://images.pexels.com/photos/323772/pexels-photo-323772.jpeg"
+      ],
+      created_at: "2023-06-20T14:30:00Z",
+      updated_at: "2023-06-20T14:30:00Z"
+    },
+    {
+      id: "3",
+      title: "Luxury Penthouse",
+      category: "Residential",
+      location: "Miami",
+      year: "2024",
+      description: "High-end apartment with panoramic city views and premium finishes.",
+      details: "This luxury penthouse showcases the finest in urban living with breathtaking panoramic views, premium materials, and cutting-edge smart home integration.",
+      client: "Private Client",
+      area: "3,200 sq ft",
+      duration: "12 months",
+      featured: true,
+      main_image: "https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg",
+      additional_images: [
+        "https://images.pexels.com/photos/2102587/pexels-photo-2102587.jpeg",
+        "https://images.pexels.com/photos/323772/pexels-photo-323772.jpeg"
+      ],
+      created_at: "2024-03-10T09:15:00Z",
+      updated_at: "2024-03-10T09:15:00Z"
+    }
+  ],
+  team_members: [
+    {
+      id: "1",
+      name: "Alex Rodriguez",
+      position: "Principal Architect",
+      bio: "Lead architect with over 15 years of experience in sustainable design and urban planning.",
+      image_url: "https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg",
+      email: "alex@26asdesign.com",
+      linkedin_url: "https://linkedin.com/in/alexrodriguez",
+      sort_order: 1,
+      active: true,
+      created_at: "2023-01-01T00:00:00Z",
+      updated_at: "2023-01-01T00:00:00Z"
+    },
+    {
+      id: "2",
+      name: "Sarah Kim",
+      position: "Design Director",
+      bio: "Creative director specializing in interior design and space optimization for modern living.",
+      image_url: "https://images.pexels.com/photos/3777946/pexels-photo-3777946.jpeg",
+      email: "sarah@26asdesign.com",
+      linkedin_url: "https://linkedin.com/in/sarahkim",
+      sort_order: 2,
+      active: true,
+      created_at: "2023-01-01T00:00:00Z",
+      updated_at: "2023-01-01T00:00:00Z"
+    },
+    {
+      id: "3",
+      name: "Michael Chen",
+      position: "Project Manager",
+      bio: "Experienced project manager ensuring timely delivery and quality execution of all projects.",
+      image_url: "https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg",
+      email: "michael@26asdesign.com",
+      linkedin_url: "https://linkedin.com/in/michaelchen",
+      sort_order: 3,
+      active: true,
+      created_at: "2023-01-01T00:00:00Z",
+      updated_at: "2023-01-01T00:00:00Z"
+    }
+  ],
+  testimonials: [
+    {
+      id: "1",
+      client_name: "Sarah Johnson",
+      client_position: "CEO, Tech Innovations",
+      testimonial_text: "26AS Design Studio transformed our office space into a modern, functional workplace that truly reflects our company culture.",
+      rating: 5,
+      project_id: "2",
+      active: true,
+      created_at: "2023-07-01T00:00:00Z",
+      updated_at: "2023-07-01T00:00:00Z"
+    },
+    {
+      id: "2",
+      client_name: "Michael Chen",
+      client_position: "Homeowner",
+      testimonial_text: "The team delivered beyond our expectations. Our new home is a perfect blend of contemporary design and practical living.",
+      rating: 5,
+      project_id: "1",
+      active: true,
+      created_at: "2024-02-01T00:00:00Z",
+      updated_at: "2024-02-01T00:00:00Z"
+    },
+    {
+      id: "3",
+      client_name: "Lisa Rodriguez",
+      client_position: "Hotel Manager",
+      testimonial_text: "Working with 26AS was seamless. They understood our vision and created a space that our guests absolutely love.",
+      rating: 5,
+      project_id: "3",
+      active: true,
+      created_at: "2024-04-01T00:00:00Z",
+      updated_at: "2024-04-01T00:00:00Z"
+    }
+  ],
+  site_settings: {
+    stats: {
+      projectsCompleted: 150,
+      yearsExperience: 12,
+      happyClients: 200,
+      successRate: 95
+    },
+    contact_info: {
+      address: "Mumbai, Maharashtra, India",
+      phone: "+91 98765 43210",
+      email: "info@26asdesign.com"
+    },
+    social_links: {
+      facebook: "https://facebook.com/26asdesign",
+      instagram: "https://instagram.com/26asdesign",
+      twitter: "https://twitter.com/26asdesign",
+      youtube: "https://youtube.com/@26asdesign",
+      linkedin: "https://linkedin.com/company/26asdesign",
+      behance: "https://behance.net/26asdesign"
+    },
+    hero_slides: [
+      {
+        image: "https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg",
+        title: "Modern Architecture",
+        subtitle: "Creating spaces that inspire"
+      },
+      {
+        image: "https://images.pexels.com/photos/1109541/pexels-photo-1109541.jpeg",
+        title: "Innovative Design",
+        subtitle: "Where form meets function"
+      },
+      {
+        image: "https://images.pexels.com/photos/2724749/pexels-photo-2724749.jpeg",
+        title: "Contemporary Living",
+        subtitle: "Redefining residential spaces"
+      }
+    ]
+  },
+  admin_users: [
+    {
+      id: "1",
+      username: "superadmin",
+      password_hash: "super123",
+      role: "super_admin" as const,
+      permissions: {
+        projects: true,
+        team: true,
+        stats: true,
+        contact: true,
+        social: true,
+        users: true
+      },
+      active: true,
+      created_at: "2023-01-01T00:00:00Z",
+      updated_at: "2023-01-01T00:00:00Z"
+    },
+    {
+      id: "2",
+      username: "admin",
+      password_hash: "admin123",
+      role: "admin" as const,
+      permissions: {
+        projects: true,
+        team: true,
+        stats: false,
+        contact: false,
+        social: false,
+        users: false
+      },
+      active: true,
+      created_at: "2023-01-01T00:00:00Z",
+      updated_at: "2023-01-01T00:00:00Z"
+    }
+  ]
+};
+
+// Generate unique ID
+function generateId(): string {
+  return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+}
+
+// Enhanced connection check with retry
+async function isSupabaseConnectedWithRetry(retries = 3): Promise<boolean> {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || !supabaseServerClient) {
+        return false;
+      }
+      
+      const { data, error } = await supabaseServerClient
+        .from('projects')
+        .select('count')
+        .limit(1);
+      
+      if (!error) return true;
+      
+      if (i < retries) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+      }
+    } catch (error) {
+      console.log(`Supabase connection attempt ${i + 1} failed:`, error);
+      if (i < retries) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      }
+    }
+  }
+  return false;
+}
+
+// Projects API
+export const projectsApi = {
+  async getAll(): Promise<Project[]> {
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { data, error } = await supabaseServerClient
+          .from('projects')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (!error && data) {
+          return data;
+        }
+      }
+    } catch (error) {
+      console.log('Using fallback projects data:', error);
+    }
+    
+    return fallbackData.projects;
+  },
+
+  async getById(id: string): Promise<Project | null> {
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { data, error } = await supabaseServerClient
+          .from('projects')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (!error && data) {
+          return data;
+        }
+      }
+    } catch (error) {
+      console.log('Using fallback project data:', error);
+    }
+    
+    return fallbackData.projects.find(project => project.id === id) || null;
+  },
+
+  async getFeatured(): Promise<Project[]> {
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { data, error } = await supabaseServerClient
+          .from('projects')
+          .select('*')
+          .eq('featured', true)
+          .order('created_at', { ascending: false });
+        
+        if (!error && data) {
+          return data;
+        }
+      }
+    } catch (error) {
+      console.log('Using fallback featured projects data:', error);
+    }
+    
+    return fallbackData.projects.filter(project => project.featured);
+  },
+
+  async create(project: Omit<Project, 'id' | 'created_at' | 'updated_at'>): Promise<Project> {
+    // Validate required fields
+    if (!project.title || !project.category || !project.location) {
+      throw new Error('Missing required fields: title, category, location');
+    }
+
+    const newProject = {
+      ...project,
+      id: generateId(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { data, error } = await supabaseAdmin
+          .from('projects')
+          .insert([newProject])
+          .select()
+          .single();
+        
+        if (!error && data) {
+          return data;
+        }
+        console.log('Supabase insert failed, using fallback:', error);
+      }
+    } catch (error) {
+      console.log('Supabase not available for project creation, using fallback:', error);
+    }
+    
+    // Fallback: Add to demo data (works for current session)
+    fallbackData.projects.unshift(newProject);
+    return newProject;
+  },
+
+  async update(id: string, updates: Partial<Project>): Promise<Project> {
+    const updateData = {
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { data, error } = await supabaseAdmin
+          .from('projects')
+          .update(updateData)
+          .eq('id', id)
+          .select()
+          .single();
+        
+        if (!error && data) {
+          return data;
+        }
+        console.log('Supabase update failed, using fallback:', error);
+      }
+    } catch (error) {
+      console.log('Supabase not available for project update, using fallback:', error);
+    }
+    
+    // Fallback: Update in demo data
+    const projectIndex = fallbackData.projects.findIndex(p => p.id === id);
+    if (projectIndex !== -1) {
+      fallbackData.projects[projectIndex] = {
+        ...fallbackData.projects[projectIndex],
+        ...updateData
+      };
+      return fallbackData.projects[projectIndex];
+    }
+    
+    throw new Error('Project not found');
+  },
+
+  async delete(id: string): Promise<void> {
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { error } = await supabaseAdmin
+          .from('projects')
+          .delete()
+          .eq('id', id);
+        
+        if (!error) {
+          return;
+        }
+        console.log('Supabase delete failed, using fallback:', error);
+      }
+    } catch (error) {
+      console.log('Supabase not available for project deletion, using fallback:', error);
+    }
+    
+    // Fallback: Remove from demo data
+    const projectIndex = fallbackData.projects.findIndex(p => p.id === id);
+    if (projectIndex !== -1) {
+      fallbackData.projects.splice(projectIndex, 1);
+    }
+  }
+};
+
+// Team Members API
+export const teamMembersApi = {
+  async getAll(): Promise<TeamMember[]> {
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { data, error } = await supabaseServerClient
+          .from('team_members')
+          .select('*')
+          .eq('active', true)
+          .order('sort_order', { ascending: true });
+        
+        if (!error && data) {
+          return data;
+        }
+      }
+    } catch (error) {
+      console.log('Using fallback team members data:', error);
+    }
+    
+    return fallbackData.team_members.filter(member => member.active);
+  },
+
+  async create(member: Omit<TeamMember, 'id' | 'created_at' | 'updated_at'>): Promise<TeamMember> {
+    // Validate required fields
+    if (!member.name || !member.position) {
+      throw new Error('Missing required fields: name, position');
+    }
+
+    const newMember = {
+      ...member,
+      id: generateId(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { data, error } = await supabaseAdmin
+          .from('team_members')
+          .insert([newMember])
+          .select()
+          .single();
+        
+        if (!error && data) {
+          return data;
+        }
+        console.log('Supabase insert failed, using fallback:', error);
+      }
+    } catch (error) {
+      console.log('Supabase not available for team member creation, using fallback:', error);
+    }
+    
+    // Fallback: Add to demo data
+    fallbackData.team_members.push(newMember);
+    return newMember;
+  },
+
+  async update(id: string, updates: Partial<TeamMember>): Promise<TeamMember> {
+    const updateData = {
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { data, error } = await supabaseAdmin
+          .from('team_members')
+          .update(updateData)
+          .eq('id', id)
+          .select()
+          .single();
+        
+        if (!error && data) {
+          return data;
+        }
+        console.log('Supabase update failed, using fallback:', error);
+      }
+    } catch (error) {
+      console.log('Supabase not available for team member update, using fallback:', error);
+    }
+    
+    // Fallback: Update in demo data
+    const memberIndex = fallbackData.team_members.findIndex(m => m.id === id);
+    if (memberIndex !== -1) {
+      fallbackData.team_members[memberIndex] = {
+        ...fallbackData.team_members[memberIndex],
+        ...updateData
+      };
+      return fallbackData.team_members[memberIndex];
+    }
+    
+    throw new Error('Team member not found');
+  },
+
+  async delete(id: string): Promise<void> {
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { error } = await supabaseAdmin
+          .from('team_members')
+          .delete()
+          .eq('id', id);
+        
+        if (!error) {
+          return;
+        }
+        console.log('Supabase delete failed, using fallback:', error);
+      }
+    } catch (error) {
+      console.log('Supabase not available for team member deletion, using fallback:', error);
+    }
+    
+    // Fallback: Remove from demo data
+    const memberIndex = fallbackData.team_members.findIndex(m => m.id === id);
+    if (memberIndex !== -1) {
+      fallbackData.team_members.splice(memberIndex, 1);
+    }
+  }
+};
+
+// Testimonials API
+export const testimonialsApi = {
+  async getAll(): Promise<Testimonial[]> {
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { data, error } = await supabaseServerClient
+          .from('testimonials')
+          .select('*')
+          .eq('active', true)
+          .order('created_at', { ascending: false });
+        
+        if (!error && data) {
+          return data;
+        }
+      }
+    } catch (error) {
+      console.log('Using fallback testimonials data:', error);
+    }
+    
+    return fallbackData.testimonials.filter(testimonial => testimonial.active);
+  },
+
+  async create(testimonial: Omit<Testimonial, 'id' | 'created_at' | 'updated_at'>): Promise<Testimonial> {
+    // Validate required fields
+    if (!testimonial.client_name || !testimonial.testimonial_text) {
+      throw new Error('Missing required fields: client_name, testimonial_text');
+    }
+
+    const newTestimonial = {
+      ...testimonial,
+      id: generateId(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { data, error } = await supabaseAdmin
+          .from('testimonials')
+          .insert([newTestimonial])
+          .select()
+          .single();
+        
+        if (!error && data) {
+          return data;
+        }
+        console.log('Supabase insert failed, using fallback:', error);
+      }
+    } catch (error) {
+      console.log('Supabase not available for testimonial creation, using fallback:', error);
+    }
+    
+    // Fallback: Add to demo data
+    fallbackData.testimonials.push(newTestimonial);
+    return newTestimonial;
+  },
+
+  async update(id: string, updates: Partial<Testimonial>): Promise<Testimonial> {
+    const updateData = {
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { data, error } = await supabaseAdmin
+          .from('testimonials')
+          .update(updateData)
+          .eq('id', id)
+          .select()
+          .single();
+        
+        if (!error && data) {
+          return data;
+        }
+        console.log('Supabase update failed, using fallback:', error);
+      }
+    } catch (error) {
+      console.log('Supabase not available for testimonial update, using fallback:', error);
+    }
+    
+    // Fallback: Update in demo data
+    const testimonialIndex = fallbackData.testimonials.findIndex(t => t.id === id);
+    if (testimonialIndex !== -1) {
+      fallbackData.testimonials[testimonialIndex] = {
+        ...fallbackData.testimonials[testimonialIndex],
+        ...updateData
+      };
+      return fallbackData.testimonials[testimonialIndex];
+    }
+    
+    throw new Error('Testimonial not found');
+  },
+
+  async delete(id: string): Promise<void> {
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { error } = await supabaseAdmin
+          .from('testimonials')
+          .delete()
+          .eq('id', id);
+        
+        if (!error) {
+          return;
+        }
+        console.log('Supabase delete failed, using fallback:', error);
+      }
+    } catch (error) {
+      console.log('Supabase not available for testimonial deletion, using fallback:', error);
+    }
+    
+    // Fallback: Remove from demo data
+    const testimonialIndex = fallbackData.testimonials.findIndex(t => t.id === id);
+    if (testimonialIndex !== -1) {
+      fallbackData.testimonials.splice(testimonialIndex, 1);
+    }
+  }
+};
+
+// Site Settings API
+export const siteSettingsApi = {
+  async get(key: keyof SiteSettings): Promise<any> {
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { data, error } = await supabaseServerClient
+          .from('site_settings')
+          .select('value')
+          .eq('key', key)
+          .single();
+        
+        if (!error && data?.value) {
+          return JSON.parse(data.value);
+        }
+      }
+    } catch (error) {
+      console.log(`Using fallback ${key} data:`, error);
+    }
+    
+    return (fallbackData.site_settings as any)[key];
+  },
+
+  async set(key: keyof SiteSettings, value: any): Promise<void> {
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { error } = await supabaseAdmin
+          .from('site_settings')
+          .upsert({
+            key,
+            value: JSON.stringify(value),
+            updated_at: new Date().toISOString()
+          });
+        
+        if (!error) {
+          return;
+        }
+        console.log('Supabase settings update failed, using fallback:', error);
+      }
+    } catch (error) {
+      console.log('Supabase not available for settings update, using fallback:', error);
+    }
+    
+    // Fallback: Update in demo data
+    (fallbackData.site_settings as any)[key] = value;
+  }
+};
+
+// Admin Users API
+export const adminUsersApi = {
+  async getAll(): Promise<AdminUser[]> {
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { data, error } = await supabaseAdmin
+          .from('admin_users')
+          .select('*')
+          .eq('active', true)
+          .order('created_at', { ascending: false });
+        
+        if (!error && data) {
+          return data;
+        }
+      }
+    } catch (error) {
+      console.log('Using fallback admin users data:', error);
+    }
+    
+    return fallbackData.admin_users.filter(user => user.active);
+  },
+
+  async authenticate(username: string, password: string): Promise<AdminUser | null> {
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { data, error } = await supabaseAdmin
+          .from('admin_users')
+          .select('*')
+          .eq('username', username)
+          .eq('active', true)
+          .single();
+        
+        if (!error && data && data.password_hash === password) {
+          // Update last login
+          await supabaseAdmin
+            .from('admin_users')
+            .update({ last_login: new Date().toISOString() })
+            .eq('id', data.id);
+          
+          return data;
+        }
+      }
+    } catch (error) {
+      console.log('Using fallback authentication:', error);
+    }
+    
+    // Fallback authentication
+    const user = fallbackData.admin_users.find(u => u.username === username && u.active);
+    if (user && user.password_hash === password) {
+      return user;
+    }
+    return null;
+  },
+
+  async create(user: Omit<AdminUser, 'id' | 'created_at' | 'updated_at'>): Promise<AdminUser> {
+    // Validate required fields
+    if (!user.username || !user.password_hash) {
+      throw new Error('Missing required fields: username, password_hash');
+    }
+
+    const newUser = {
+      ...user,
+      id: generateId(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { data, error } = await supabaseAdmin
+          .from('admin_users')
+          .insert([newUser])
+          .select()
+          .single();
+        
+        if (!error && data) {
+          return data;
+        }
+        console.log('Supabase insert failed, using fallback:', error);
+      }
+    } catch (error) {
+      console.log('Supabase not available for user creation, using fallback:', error);
+    }
+    
+    // Fallback: Add to demo data
+    fallbackData.admin_users.push(newUser);
+    return newUser;
+  },
+
+  async update(id: string, updates: Partial<AdminUser>): Promise<AdminUser> {
+    const updateData = {
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { data, error } = await supabaseAdmin
+          .from('admin_users')
+          .update(updateData)
+          .eq('id', id)
+          .select()
+          .single();
+        
+        if (!error && data) {
+          return data;
+        }
+        console.log('Supabase update failed, using fallback:', error);
+      }
+    } catch (error) {
+      console.log('Supabase not available for user update, using fallback:', error);
+    }
+    
+    // Fallback: Update in demo data
+    const userIndex = fallbackData.admin_users.findIndex(u => u.id === id);
+    if (userIndex !== -1) {
+      fallbackData.admin_users[userIndex] = {
+        ...fallbackData.admin_users[userIndex],
+        ...updateData
+      };
+      return fallbackData.admin_users[userIndex];
+    }
+    
+    throw new Error('User not found');
+  },
+
+  async delete(id: string): Promise<void> {
+    try {
+      if (await isSupabaseConnectedWithRetry()) {
+        const { error } = await supabaseAdmin
+          .from('admin_users')
+          .delete()
+          .eq('id', id);
+        
+        if (!error) {
+          return;
+        }
+        console.log('Supabase delete failed, using fallback:', error);
+      }
+    } catch (error) {
+      console.log('Supabase not available for user deletion, using fallback:', error);
+    }
+    
+    // Fallback: Remove from demo data
+    const userIndex = fallbackData.admin_users.findIndex(u => u.id === id);
+    if (userIndex !== -1) {
+      fallbackData.admin_users.splice(userIndex, 1);
+    }
+  }
+};
