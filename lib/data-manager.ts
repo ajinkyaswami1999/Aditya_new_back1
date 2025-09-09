@@ -790,6 +790,7 @@ export const testimonialsApi = {
 // Site Settings API
 export const siteSettingsApi = {
   async get(key: keyof SiteSettings): Promise<any> {
+    console.log(`[DataManager] Getting site setting: ${key}`);
     try {
       if (await isSupabaseConnectedWithRetry() && supabaseServerClient) {
         console.log(`Loading ${key} from Supabase database...`);
@@ -801,23 +802,33 @@ export const siteSettingsApi = {
         
         if (!error && data?.value) {
           console.log(`Loaded ${key} from database`);
-          return JSON.parse(data.value);
+          const parsedValue = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+          console.log(`[DataManager] Successfully parsed ${key}:`, parsedValue);
+          return parsedValue;
         } else {
-          console.error(`Error loading ${key} from database:`, error);
-          throw new Error('Failed to load from database');
+          console.error(`[DataManager] Error loading ${key} from database:`, error);
+          if (error?.code === 'PGRST116') {
+            console.log(`[DataManager] ${key} not found in database, this might be expected for new settings`);
+            // Return fallback for missing settings
+            console.log(`Using fallback ${key} data (setting not found in database)`);
+            return (fallbackData.site_settings as any)[key];
+          }
+          throw new Error(`Failed to load ${key} from database: ${error?.message || 'Unknown error'}`);
         }
       }
     } catch (error) {
-      console.log(`Supabase not available for ${key}, using fallback data:`, error);
+      console.log(`[DataManager] Supabase not available for ${key}, using fallback data:`, error);
     }
     
-    console.log(`Using fallback ${key} data`);
+    console.log(`[DataManager] Using fallback ${key} data`);
     return (fallbackData.site_settings as any)[key];
   },
 
   async set(key: keyof SiteSettings, value: any): Promise<void> {
+    console.log(`[DataManager] Setting site setting: ${key}`, value);
     try {
       if (await isSupabaseConnectedWithRetry() && supabaseAdmin) {
+        console.log(`[DataManager] Upserting ${key} to Supabase database...`);
         const { error } = await supabaseAdmin
           .from('site_settings')
           .upsert({
@@ -827,16 +838,18 @@ export const siteSettingsApi = {
           });
         
         if (!error) {
+          console.log(`[DataManager] Successfully updated ${key} in database`);
           return;
         }
-        console.log('Supabase settings update failed, using fallback:', error);
+        console.error(`[DataManager] Supabase settings update failed for ${key}:`, error);
+        throw new Error(`Failed to update ${key}: ${error.message}`);
+        console.error(`[DataManager] Supabase not available for updating ${key}`);
+        throw new Error('Supabase not available');
       }
     } catch (error) {
-      console.log('Supabase not available for settings update, using fallback:', error);
+      console.error(`[DataManager] Error updating ${key}:`, error);
+      throw error;
     }
-    
-    // Fallback: Update in demo data
-    (fallbackData.site_settings as any)[key] = value;
   }
 };
 
