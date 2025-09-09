@@ -22,29 +22,7 @@ export default function StatsSection() {
 
   const loadStats = async () => {
     try {
-      // Try to load from Supabase first
-      if (supabaseClient) {
-        const { data, error } = await supabaseClient
-          .from('site_settings')
-          .select('value')
-          .eq('key', 'stats')
-          .single();
-        
-        if (!error && data?.value) {
-          const statsData = JSON.parse(data.value);
-          const updatedStats = [
-            { number: statsData.projectsCompleted, label: 'Projects Completed', suffix: '+' },
-            { number: statsData.yearsExperience, label: 'Years Experience', suffix: '' },
-            { number: statsData.happyClients, label: 'Happy Clients', suffix: '+' },
-            { number: statsData.successRate, label: 'Success Rate', suffix: '%' }
-          ];
-          setStats(updatedStats);
-          setAnimatedStats(updatedStats.map(() => 0));
-          return;
-        }
-      }
-      
-      // Fallback to API route
+      // Load from API route (which handles Supabase connection)
       const response = await fetch('/api/site-settings/stats');
       if (response.ok) {
         const statsData = await response.json();
@@ -56,6 +34,9 @@ export default function StatsSection() {
         ];
         setStats(updatedStats);
         setAnimatedStats(updatedStats.map(() => 0));
+      } else {
+        console.error('Failed to load stats from API:', response.status);
+        // Keep default stats on API error
       }
     } catch (error) {
       console.error('Error loading stats:', error);
