@@ -403,6 +403,7 @@ export const projectsApi = {
 
     const newProject = {
       ...project,
+      additional_images: project.additional_images || [],
       id: generateId(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
