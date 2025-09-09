@@ -538,10 +538,10 @@ export const teamMembersApi = {
     }
 
     const newMember: TeamMember = {
+      ...member,
       bio: member.bio || '',
       email: member.email || '',
       linkedin_url: member.linkedin_url || '',
-      ...member,
       id: generateId(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
