@@ -61,9 +61,9 @@ export default function Contact() {
                     <div>
                       <h3 className="font-medium mb-1 text-white">Office Address</h3>
                       <p className="text-gray-300">
-                        123 Design Street<br />
-                        Suite 456<br />
-                        New York, NY 10001
+                        E-35 Karni Nagar,<br />
+                        Lalgarh, Bikaner,<br />
+                        Rajasthan, IN 334001
                       </p>
                     </div>
                   </div>
@@ -76,7 +76,7 @@ export default function Contact() {
                         href="tel:+1 (555) 123-4567"
                         className="text-gray-300 hover:text-yellow-400 transition-colors cursor-pointer"
                       >
-                        +1 (555) 123-4567
+                        +91 6377828824
                       </a>
                     </div>
                   </div>
