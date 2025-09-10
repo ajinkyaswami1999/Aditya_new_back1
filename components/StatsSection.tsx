@@ -146,11 +146,14 @@ export default function StatsSection() {
 
   const loadStats = async () => {
     try {
+      console.log('🔍 Loading stats from API...');
       // Load from API route (which handles Supabase connection)
       const response = await fetch('/api/site-settings/stats');
+      console.log('🔍 Stats API response status:', response.status);
+      
       if (response.ok) {
         const statsData = await response.json();
-        console.log('Loaded stats data:', statsData);
+        console.log('🔍 Stats data received from API:', statsData);
         
         // Ensure we have valid numbers
         const safeStats = {
@@ -166,7 +169,7 @@ export default function StatsSection() {
           { number: safeStats.happyClients, label: 'Happy Clients', suffix: '+' },
           { number: safeStats.successRate, label: 'Success Rate', suffix: '%' }
         ];
-        console.log('Updated stats array:', updatedStats);
+        console.log('🔍 Updated stats array:', updatedStats);
         setStats(updatedStats);
         setAnimatedStats(updatedStats.map(() => 0));
       } else {
@@ -176,6 +179,7 @@ export default function StatsSection() {
         // Keep default stats on API error
       }
     } catch (error) {
+      console.log('🔍 Stats API error:', error);
       console.error('Error loading stats:', error);
       // Keep default stats on error
     }

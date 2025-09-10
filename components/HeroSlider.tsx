@@ -31,29 +31,22 @@ export default function HeroSlider() {
 
   const loadHeroSlides = async () => {
     try {
-      // Try to load from Supabase first
-      if (supabaseClient) {
-        const { data, error } = await supabaseClient
-          .from('site_settings')
-          .select('value')
-          .eq('key', 'hero_slides')
-          .single();
-        
-        if (!error && data?.value) {
-          const heroSlides = JSON.parse(data.value);
-          setSlides(heroSlides);
-          return;
-        }
-      }
-      
-      // Fallback to API route
+      console.log('🔍 Loading hero slides from API...');
+      // Load from API route (which handles Supabase connection)
       const response = await fetch('/api/site-settings/hero_slides');
+      console.log('🔍 Hero slides API response status:', response.status);
+      
       if (response.ok) {
         const heroSlides = await response.json();
+        console.log('🔍 Hero slides data received from API:', heroSlides);
         setSlides(heroSlides);
+      } else {
+        const errorText = await response.text();
+        console.error('🔍 Failed to load hero slides from API:', response.status, errorText);
+        // Keep default slides on API error
       }
     } catch (error) {
-      console.error('Error loading hero slides:', error);
+      console.error('🔍 Hero slides API error:', error);
       // Keep default slides on error
     }
   };

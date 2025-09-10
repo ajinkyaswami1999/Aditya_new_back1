@@ -1,7 +1,5 @@
 'use client';
 
-'use client';
-
 import { useEffect, useState } from 'react';
 import { Facebook, Instagram, Twitter, Youtube, Linkedin } from 'lucide-react';
 import { supabaseClient } from '@/lib/supabase-client';
@@ -24,29 +22,35 @@ export default function SocialMedia() {
 
   const loadSocialLinks = async () => {
     try {
-      // Try to load from Supabase first
-      if (supabaseClient) {
-        const { data, error } = await supabaseClient
-          .from('site_settings')
-          .select('value')
-          .eq('key', 'social_links')
-          .single();
-        
-        if (!error && data?.value) {
-          const socialData = JSON.parse(data.value);
-          setSocialLinks(socialData);
-          return;
+      console.log('🔍 Loading social links from API...');
+      const response = await fetch('/api/site-settings/social_links', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
         }
-      }
+      });
       
-      // Fallback to API route
-      const response = await fetch('/api/site-settings/social_links');
+      console.log('🔍 Social links API response status:', response.status);
+      
       if (response.ok) {
         const socialData = await response.json();
-        setSocialLinks(socialData);
+        console.log('🔍 Social links data received from API:', socialData);
+        
+        // Validate that we have the expected structure
+        if (socialData && typeof socialData === 'object' && socialData.facebook) {
+          console.log('🔍 Setting social links from API data');
+          setSocialLinks(socialData);
+        } else {
+          console.warn('🔍 Invalid social links data structure:', socialData);
+          console.log('🔍 Using default social links');
+        }
+      } else {
+        const errorText = await response.text();
+        console.error('🔍 Failed to load social links from API:', response.status, errorText);
+        // Keep default social links on API error
       }
     } catch (error) {
-      console.error('Error loading social links:', error);
+      console.error('🔍 Social links API error:', error);
       // Keep default social links on error
     }
   };

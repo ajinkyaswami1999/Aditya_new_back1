@@ -17,25 +17,35 @@ export default function Footer() {
 
   const loadContactInfo = async () => {
     try {
-      // Try to load from Supabase first
-      if (supabaseClient && process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id')) {
-        const { data, error } = await supabaseClient
-          .from('site_settings')
-          .select('value')
-          .eq('key', 'contact_info')
-          .single();
-        
-        if (!error && data?.value) {
-          const contactData = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
-          setContactInfo(contactData);
-          return;
+      console.log('🔍 Loading contact info from API...');
+      const response = await fetch('/api/site-settings/contact_info', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
         }
-      }
+      });
       
-      // Skip API fallback and use default data when Supabase is not configured
-      console.log('Using default contact info (Supabase not configured)');
+      console.log('🔍 Contact info API response status:', response.status);
+      
+      if (response.ok) {
+        const contactData = await response.json();
+        console.log('🔍 Contact info data received from API:', contactData);
+        
+        // Validate that we have the expected structure
+        if (contactData && typeof contactData === 'object' && contactData.address) {
+          console.log('🔍 Setting contact info from API data');
+          setContactInfo(contactData);
+        } else {
+          console.warn('🔍 Invalid contact info data structure:', contactData);
+          console.log('🔍 Using default contact info');
+        }
+      } else {
+        const errorText = await response.text();
+        console.error('🔍 Failed to load contact info from API:', response.status, errorText);
+        // Keep default contact info on API error
+      }
     } catch (error) {
-      console.error('Error loading contact info:', error);
+      console.error('🔍 Contact info API error:', error);
       // Keep default contact info on error
     }
   };
