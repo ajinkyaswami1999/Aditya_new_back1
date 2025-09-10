@@ -57,8 +57,8 @@ export async function GET() {
     console.error(`[API] Failed to fetch site setting contact_info:`, error);
 
     const fallbackContactInfo = {
-      address: "123 Design Street, Suite 456, New York, NY 10001",
-      phone: "+1 (555) 123-4567",
+      address: "E-35 Karni Nagar, Lalgarh, Bikaner, 334001",
+      phone: "+91 6377828824",
       email: "info@26asdesign.com"
     };
 
