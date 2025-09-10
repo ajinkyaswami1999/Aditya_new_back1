@@ -147,7 +147,6 @@ export default function StatsSection() {
   const loadStats = async () => {
     try {
       console.log('🔍 Loading stats from API...');
-      // Load from API route (which handles Supabase connection)
       const response = await fetch('/api/site-settings/stats');
       console.log('🔍 Stats API response status:', response.status);
       
@@ -155,35 +154,65 @@ export default function StatsSection() {
         const statsData = await response.json();
         console.log('🔍 Stats data received from API:', statsData);
         
-        // Ensure we have valid numbers
-        const safeStats = {
-          projectsCompleted: Number(statsData.projectsCompleted) || 150,
-          yearsExperience: Number(statsData.yearsExperience) || 12,
-          happyClients: Number(statsData.happyClients) || 200,
-          successRate: Number(statsData.successRate) || 95
-        };
-        
-        const updatedStats = [
-          { number: safeStats.projectsCompleted, label: 'Projects Completed', suffix: '+' },
-          { number: safeStats.yearsExperience, label: 'Years Experience', suffix: '' },
-          { number: safeStats.happyClients, label: 'Happy Clients', suffix: '+' },
-          { number: safeStats.successRate, label: 'Success Rate', suffix: '%' }
-        ];
-        console.log('🔍 Updated stats array:', updatedStats);
-        setStats(updatedStats);
-        setAnimatedStats(updatedStats.map(() => 0));
+        // Validate that we have the expected structure and valid numbers
+        if (statsData && typeof statsData === 'object') {
+          const safeStats = {
+            projectsCompleted: Number(statsData.projectsCompleted) || 150,
+            yearsExperience: Number(statsData.yearsExperience) || 12,
+            happyClients: Number(statsData.happyClients) || 200,
+            successRate: Number(statsData.successRate) || 95
+          };
+          
+          const updatedStats = [
+            { number: safeStats.projectsCompleted, label: 'Projects Completed', suffix: '+' },
+            { number: safeStats.yearsExperience, label: 'Years Experience', suffix: '' },
+            { number: safeStats.happyClients, label: 'Happy Clients', suffix: '+' },
+            { number: safeStats.successRate, label: 'Success Rate', suffix: '%' }
+          ];
+          
+          console.log('🔍 Updated stats array:', updatedStats);
+          setStats(updatedStats);
+          setAnimatedStats(updatedStats.map(() => 0)); // Reset animation
+        } else {
+          console.warn('🔍 Invalid stats data structure:', statsData);
+        }
       } else {
         console.error('Failed to load stats from API:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('API Error response:', errorText);
-        // Keep default stats on API error
       }
     } catch (error) {
-      console.log('🔍 Stats API error:', error);
-      console.error('Error loading stats:', error);
-      // Keep default stats on error
+      console.error('🔍 Stats API error:', error);
     }
   };
+  
+  // Re-run animation when stats change
+  useEffect(() => {
+    if (isVisible && stats.length > 0) {
+      // Reset animated stats
+      setAnimatedStats(stats.map(() => 0));
+      
+      // Animate numbers
+      stats.forEach((stat, index) => {
+        let start = 0;
+        const end = stat.number;
+        const duration = 2000;
+        const increment = end / (duration / 16);
+        
+        const timer = setInterval(() => {
+          start += increment;
+          if (start >= end) {
+            start = end;
+            clearInterval(timer);
+          }
+          
+          setAnimatedStats(prev => {
+            const newStats = [...prev];
+            newStats[index] = Math.floor(start);
+            return newStats;
+          });
+        }, 16);
+      });
+    }
+  }, [stats, isVisible]);
   
   useEffect(() => {
     const observer = new IntersectionObserver(

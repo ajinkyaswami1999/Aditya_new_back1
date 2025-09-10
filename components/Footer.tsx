@@ -32,21 +32,24 @@ export default function Footer() {
         console.log('🔍 Contact info data received from API:', contactData);
         
         // Validate that we have the expected structure
-        if (contactData && typeof contactData === 'object' && contactData.address) {
+        if (contactData && typeof contactData === 'object') {
+          // Merge with defaults to ensure all required fields exist
+          const mergedContactInfo = {
+            address: contactData.address || '123 Design Street, Suite 456, New York, NY 10001',
+            phone: contactData.phone || '+1 (555) 123-4567',
+            email: contactData.email || 'info@26asdesign.com'
+          };
           console.log('🔍 Setting contact info from API data');
-          setContactInfo(contactData);
+          setContactInfo(mergedContactInfo);
         } else {
           console.warn('🔍 Invalid contact info data structure:', contactData);
-          console.log('🔍 Using default contact info');
         }
       } else {
         const errorText = await response.text();
         console.error('🔍 Failed to load contact info from API:', response.status, errorText);
-        // Keep default contact info on API error
       }
     } catch (error) {
       console.error('🔍 Contact info API error:', error);
-      // Keep default contact info on error
     }
   };
 
