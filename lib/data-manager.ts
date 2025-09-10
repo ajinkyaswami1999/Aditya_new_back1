@@ -814,9 +814,19 @@ export const siteSettingsApi = {
           console.error(`[DataManager] Error loading ${key} from database:`, error);
           if (error?.code === 'PGRST116') {
             console.log(`[DataManager] ${key} not found in database, this might be expected for new settings`);
-            // Return fallback for missing settings
-            console.log(`Using fallback ${key} data (setting not found in database)`);
-            return (fallbackData.site_settings as any)[key];
+            // Try to create the missing setting with fallback data
+            console.log(`[DataManager] Creating missing ${key} setting with fallback data`);
+            const fallbackValue = (fallbackData.site_settings as any)[key];
+            if (fallbackValue) {
+              try {
+                await this.set(key, fallbackValue);
+                console.log(`[DataManager] Successfully created ${key} setting`);
+                return fallbackValue;
+              } catch (createError) {
+                console.error(`[DataManager] Failed to create ${key} setting:`, createError);
+                return fallbackValue;
+              }
+            }
           }
           throw new Error(`Failed to load ${key} from database: ${error?.message || 'Unknown error'}`);
         }
