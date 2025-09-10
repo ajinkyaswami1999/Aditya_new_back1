@@ -6,7 +6,7 @@ import { supabaseClient } from '@/lib/supabase-client';
 
 export default function Footer() {
   const [contactInfo, setContactInfo] = useState({
-    address: '123 Design Street, Suite 456, New York, NY 10001',
+    address: 'E-35 Karni Nagar, Lalgarh, Bikaner, 334001',
     phone: '+1 (555) 123-4567',
     email: 'info@26asdesign.com',
   });
@@ -35,7 +35,7 @@ export default function Footer() {
         if (contactData && typeof contactData === 'object') {
           // Merge with defaults to ensure all required fields exist
           const mergedContactInfo = {
-            address: contactData.address || '123 Design Street, Suite 456, New York, NY 10001',
+            address: contactData.address || 'E-35 Karni Nagar, Lalgarh, Bikaner, 334001',
             phone: contactData.phone || '+1 (555) 123-4567',
             email: contactData.email || 'info@26asdesign.com'
           };

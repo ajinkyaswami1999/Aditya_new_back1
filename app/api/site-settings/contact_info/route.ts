@@ -20,7 +20,7 @@
     
 //     // Return fallback contact info instead of error
 //     const fallbackContactInfo = {
-//       address: "123 Design Street, Suite 456, New York, NY 10001",
+//       address: "E-35 Karni Nagar, Lalgarh, Bikaner, 334001",
 //       phone: "+1 (555) 123-4567",
 //       email: "info@26asdesign.com"
 //     };
