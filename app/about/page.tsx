@@ -235,6 +235,7 @@ interface TeamMember {
   image_url: string;
   active: boolean;
 }
+
 const values = [
   {
     icon: Target,
@@ -295,6 +296,7 @@ export default function About() {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -399,72 +401,65 @@ export default function About() {
                 Our diverse team of architects, designers, and engineers brings together decades of experience and fresh perspectives.
               </p>
             </div>
+
             {loading ? (
               <div className="text-center text-yellow-400 text-xl">Loading team members...</div>
-            ) : (
-              <>
-                {/* Debug Info */}
-                <div className="text-center mb-8 text-sm text-gray-500">
-                  Debug: Loading: {loading ? 'Yes' : 'No'} | Count: {teamMembers.length} | Data: {JSON.stringify(teamMembers.map(m => ({id: m.id, name: m.name, active: m.active})))}
+            ) : teamMembers.length === 0 ? (
+              <div className="text-center">
+                <div className="text-gray-400 text-xl mb-4">
+                  No team members available
                 </div>
-                
-                {teamMembers.length === 0 ? (
-                  <div className="text-center">
-                    <div className="text-gray-400 text-xl mb-4">
-                      No team members available
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {teamMembers.map((member, index) => (
+                  <div
+                    key={member.id}
+                    className="text-center fade-in bg-gray-900/50 rounded-xl p-6 border border-gray-700 hover:border-yellow-400/50 transition-all duration-300"
+                    style={{ transitionDelay: `${index * 0.1}s` }}
+                  >
+                    <div className="w-32 h-32 mx-auto mb-6 overflow-hidden rounded-full border-4 border-yellow-400/50 hover:border-yellow-400 transition-all duration-300">
+                      {member.image_url && member.image_url !== '' ? (
+                        <img
+                          src={member.image_url}
+                          alt={member.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.log('🔍 Image failed to load:', member.image_url);
+                            // Hide the image and show initials instead
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const parent = target.parentElement;
+                            if (parent) {
+                              parent.innerHTML = `
+                                <div class="w-full h-full bg-gradient-to-br from-yellow-400/20 to-yellow-600/20 flex items-center justify-center">
+                                  <span class="text-yellow-400 text-2xl font-bold">
+                                    ${member.name.split(' ').map(n => n.charAt(0)).join('')}
+                                  </span>
+                                </div>
+                              `;
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-yellow-400/20 to-yellow-600/20 flex items-center justify-center">
+                          <span className="text-yellow-400 text-2xl font-bold">
+                            {member.name.split(' ').map(n => n.charAt(0)).join('')}
+                          </span>
+                        </div>
+                      )}
                     </div>
+                    <h3 className="text-xl font-medium mb-2 text-white">{member.name}</h3>
+                    <p className="text-yellow-400 font-medium mb-4">{member.position}</p>
+                    {member.bio && (
+                      <p className="text-gray-300 text-sm leading-relaxed">{member.bio}</p>
+                    )}
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {teamMembers.map((member, index) => (
-                      <div
-                        key={member.id}
-                        className="text-center fade-in bg-gray-900/50 rounded-xl p-6 border border-gray-700 hover:border-yellow-400/50 transition-all duration-300"
-                        style={{ transitionDelay: `${index * 0.1}s` }}
-                      >
-                        <div className="w-24 h-24 bg-gradient-to-br from-yellow-400/20 to-yellow-600/20 rounded-full mx-auto mb-4 overflow-hidden border-2 border-yellow-400/50 hover:border-yellow-400 transition-all duration-300 relative group">
-                          {member.image_url && member.image_url !== '' ? (
-                            <img
-                              src={member.image_url}
-                              alt={member.name}
-                              className="w-full h-full object-cover rounded-full"
-                              onError={(e) => {
-                                console.log('🔍 Image failed to load:', member.image_url);
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <span className="text-yellow-400 text-xl font-bold">
-                                {member.name.split(' ').map(n => n.charAt(0)).join('')}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <h3 className="text-lg font-medium mb-2 text-white">{member.name}</h3>
-                        <p className="text-yellow-400 font-medium mb-3">{member.position}</p>
-                        {member.bio && (
-                          <p className="text-gray-300 text-sm leading-relaxed">{member.bio}</p>
-                        )}
-                        <div className="text-xs text-gray-500 mt-2">
-                          ID: {member.id} | Active: {member.active ? 'Yes' : 'No'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
+                ))}
+              </div>
             )}
           </div>
         </section>
-
-        {/* Add some spacing to see if content is there */}
-        <div className="py-20 bg-red-500 text-white text-center">
-          <h2>DEBUG SECTION - Team Members Count: {teamMembers.length}</h2>
-          <pre className="text-left max-w-4xl mx-auto bg-black p-4 rounded mt-4 text-xs overflow-auto">
-            {JSON.stringify(teamMembers, null, 2)}
-          </pre>
-        </div>
       </main>
       <SocialMedia />
       <Footer />
