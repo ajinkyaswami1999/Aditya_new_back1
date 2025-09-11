@@ -7,6 +7,7 @@ import TestimonialsSection from '@/components/TestimonialsSection';
 import SocialMedia from '@/components/SocialMedia';
 import Footer from '@/components/Footer';
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 
 
 export default function Home() {
@@ -15,6 +16,7 @@ export default function Home() {
       <Preloader />
       <Navigation />
       <SpeedInsights/>
+      <Analytics/>
       <main>
         <HeroSlider />
         <StatsSection />
