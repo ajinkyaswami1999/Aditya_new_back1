@@ -131,10 +131,10 @@ import { supabaseClient } from '@/lib/supabase-client';
 export default function StatsSection() {
   const [isVisible, setIsVisible] = useState(false);
   const [stats, setStats] = useState([
-    { number: 150, label: 'Projects Completed', suffix: '+' },
-    { number: 12, label: 'Years Experience', suffix: '' },
-    { number: 200, label: 'Happy Clients', suffix: '+' },
-    { number: 95, label: 'Success Rate', suffix: '%' }
+    { number: 5, label: 'Projects Completed', suffix: '+' },
+    { number: 3, label: 'Years Experience', suffix: '' },
+    { number: 3, label: 'Happy Clients', suffix: '+' },
+    { number: 92, label: 'Success Rate', suffix: '%' }
   ]);
   const [animatedStats, setAnimatedStats] = useState(stats.map(() => 0));
   const sectionRef = useRef<HTMLDivElement>(null);
