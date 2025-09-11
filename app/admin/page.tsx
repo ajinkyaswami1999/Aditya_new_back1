@@ -939,6 +939,7 @@ export default function AdminPanel() {
                     <option value="">Select Category</option>
                     <option value="Residential">Residential</option>
                     <option value="Commercial">Commercial</option>
+                    <option value="Landscape">Landscape</option>
                     <option value="Mixed-Use">Mixed-Use</option>
                     <option value="Renovation">Renovation</option>
                   </select>
