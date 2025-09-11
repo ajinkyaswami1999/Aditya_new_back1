@@ -14,6 +14,7 @@ export default function Home() {
     <>
       <Preloader />
       <Navigation />
+      <SpeedInsights/>
       <main>
         <HeroSlider />
         <StatsSection />
